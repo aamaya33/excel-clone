@@ -1,5 +1,6 @@
 from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, DateTime, Date, inspect, MetaData, Table, select, text
-from sqlalchemy.orm import DeclarativeBase, Mapped, Session
+
+from sqlalchemy.orm import DeclarativeBase, Session
 import pandas as pd
 
 class Base(DeclarativeBase):
@@ -29,14 +30,49 @@ def create_table_from_csv(file_path, table_name):
         inspector = inspect(engine)
         metadata = MetaData()
 
-        tables = inspector.get_table_names()
+        # TODO: REFACTOR THIS 
+        # tables = inspector.get_table_names()
         if table_name in inspector.get_table_names():
             # temporary logic to test 
-            existing_table = Table(table_name, metadata, autoload_with=engine)
-            df.to_sql(table_name, engine, if_exists='append', index=False)
-            return existing_table
+            print(f"The table {table_name} already exists. What would you like to do?")
+            print("1. Append data")
+            print("2. Overwrite data")
+            print("3. Create a new table")
+            choice = input("Enter your choice (1/2/3): ")
+
+            if choice == '1':
+                # append data
+                print("Appending data to the existing table.")
+                existing_table = Table(table_name, metadata, autoload_with=engine)
+                df.to_sql(table_name, engine, if_exists='append', index=False)
+                return existing_table
+            elif choice == '2': 
+                print("Overwriting data in the existing table.")
+                existing_table = Table(table_name, metadata, autoload_with=engine)
+                # Drop the existing table
+                existing_table.drop(engine)
+                # Create a new table
+                cols = []
+                for i, (col_name, dtype) in enumerate(df.dtypes.items()):
+                    col_type = type_map.get(str(dtype), String(255))
+                    is_primary_key = i == 0
+                    cols.append(Column(col_name, col_type, primary_key=is_primary_key))
+                table = Table(table_name, metadata, *cols)
+                metadata.create_all(engine)
+                return table
+            elif choice == '3':
+                print("Creating a new table.")
+                new_name = input("Enter the new table name: ")
+                cols = []
+                for i, (col_name, dtype) in enumerate(df.dtypes.items()):
+                    col_type = type_map.get(str(dtype), String(255))
+                    is_primary_key = i == 0
+                    cols.append(Column(col_name, col_type, primary_key=is_primary_key))
+                table = Table(table_name, metadata, *cols)
+                metadata.create_all(engine)
+                df.to_sql(new_name, engine, if_exists='replace', index=False)
+                return table
         else:
-        
             cols = [] 
 
             for i, (col_name, dtype) in enumerate(df.dtypes.items()):
