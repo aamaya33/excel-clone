@@ -46,11 +46,13 @@ def create_table_from_csv(file_path, table_name):
                 existing_table = Table(table_name, metadata, autoload_with=engine)
                 df.to_sql(table_name, engine, if_exists='append', index=False)
                 return existing_table
+            
             elif choice == '2': 
                 print("Overwriting data in the existing table.")
                 existing_table = Table(table_name, metadata, autoload_with=engine)
                 # Drop the existing table
                 existing_table.drop(engine)
+                metadata.remove(existing_table)
                 # Create a new table
                 cols = []
                 for i, (col_name, dtype) in enumerate(df.dtypes.items()):
@@ -59,7 +61,9 @@ def create_table_from_csv(file_path, table_name):
                     cols.append(Column(col_name, col_type, primary_key=is_primary_key))
                 table = Table(table_name, metadata, *cols)
                 metadata.create_all(engine)
+                df.to_sql(table_name, engine, if_exists='replace', index=False)
                 return table
+            
             elif choice == '3':
                 print("Creating a new table.")
                 new_name = input("Enter the new table name: ")
@@ -68,9 +72,10 @@ def create_table_from_csv(file_path, table_name):
                     col_type = type_map.get(str(dtype), String(255))
                     is_primary_key = i == 0
                     cols.append(Column(col_name, col_type, primary_key=is_primary_key))
-                table = Table(table_name, metadata, *cols)
-                metadata.create_all(engine)
-                df.to_sql(new_name, engine, if_exists='replace', index=False)
+                new_engine = create_engine(f'sqlite:///{new_name}.db')
+                table = Table(new_name, metadata, *cols)
+                metadata.create_all(new_engine)
+                df.to_sql(new_name, new_engine, if_exists='replace', index=False)
                 return table
         else:
             cols = [] 
