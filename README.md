@@ -1,4 +1,5 @@
 ### Google Sheets Clone 
+[![Python Tests](https://github.com/aamaya33/excel-clone/actions/workflows/python.yml/badge.svg)](https://github.com/aamaya33/excel-clone/actions/workflows/python.yml)
 
 Making an Google Sheets type of thing to work on using python, sql/sqlalchemy, and some pandas. 
 
